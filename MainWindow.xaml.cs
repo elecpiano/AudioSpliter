@@ -1,6 +1,8 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -15,7 +17,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace AudioSpliter
 {
@@ -25,12 +26,25 @@ namespace AudioSpliter
     public partial class MainWindow : Window
     {
         string SourceAudioFile = "";
+        string DestFolder = "";
         List<string> TimeList = new List<string>();
         List<string> DestFileList = new List<string>();
 
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void BtnSource_click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "*.mp3|*.*";
+            ofd.Multiselect = false;
+            if (ofd.ShowDialog() == true)
+            {
+                TxtSourceFile.Text = ofd.FileName;
+                SourceAudioFile = ofd.FileName;
+            }
         }
 
         private void BtnGo_click(object sender, RoutedEventArgs e)
@@ -40,49 +54,36 @@ namespace AudioSpliter
                 MessageBox.Show("Select an audio file");
                 return;
             }
-            Split();
+            LoadAudioSource();
         }
 
-        private void Split()
+        private async void LoadAudioSource()
         {
-            //RawData = new StringBuilder();
-            //RawData.AppendLine("0");
-
             TimeList = new List<string>();
             TimeList.Add("0");
 
             Process p = new Process();
+
             p.StartInfo.FileName = "ffmpeg.exe";
             p.StartInfo.Arguments = "-i 1.mp3 -af silencedetect=d=5.9 -f null -";
             p.StartInfo.UseShellExecute = false;
-
             p.StartInfo.RedirectStandardInput = true;
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.RedirectStandardError = true;
-
-            //p.StartInfo.CreateNoWindow = true;
-            //p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-
+            p.StartInfo.CreateNoWindow = true;
+            p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             p.ErrorDataReceived += new DataReceivedEventHandler(ProcessDataReceived);
             p.StartInfo.StandardErrorEncoding = Encoding.UTF8;
 
-            //p.Start();
-            //string output = p.StandardError.ReadToEnd();
-            //File.WriteAllText("ffmpeg-output.txt", output);
-
             p.Start();
             p.BeginErrorReadLine();
-            p.WaitForExit();
+            await p.WaitForExitAsync();
 
             CheckDestFileList();
-
 
             p.Close();
             p.Dispose();
         }
-
-        //StringBuilder RawData = new StringBuilder();
-        //string TimeSeq = "";
 
         private void ProcessDataReceived(object sender, DataReceivedEventArgs e)
         {
@@ -91,13 +92,11 @@ namespace AudioSpliter
                 if (e.Data.Contains("silence_start: "))
                 {
                     string timeStr = e.Data.Substring(e.Data.IndexOf(":") + 2, e.Data.Length - e.Data.IndexOf(":") - 2);
-                    //RawData.AppendLine(timeStr);
                     TimeList.Add(timeStr);
                 }
                 else if (e.Data.Contains("silence_end: "))
                 {
                     string timeStr = e.Data.Substring(e.Data.IndexOf(":") + 2, e.Data.IndexOf("|") - e.Data.IndexOf(":") - 3);
-                    //RawData.AppendLine(timeStr);
                     TimeList.Add(timeStr);
                 }
                 //File.WriteAllText("ffmpeg-output.txt", e.Data);
@@ -115,7 +114,11 @@ namespace AudioSpliter
 
             if (DestFileList.Count == (TimeList.Count -1)/2)
             {
-                SplitAudio();
+                //SplitAudio();
+                FileInfo fi = new FileInfo(SourceAudioFile);
+                DestFolder = Path.Combine(fi.Directory.FullName, fi.Name.Remove(fi.Name.IndexOf(fi.Extension)));
+                Directory.CreateDirectory(DestFolder);
+                SplitAudioAsync();
             }
             else
             {
@@ -128,8 +131,11 @@ namespace AudioSpliter
             Process p = new Process();
             p.StartInfo.FileName = "ffmpeg.exe";
             p.StartInfo.UseShellExecute = false;
-
-            //TimeSeq = RawData.ToString();
+            p.StartInfo.RedirectStandardInput = true;
+            p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.RedirectStandardError = true;
+            p.StartInfo.CreateNoWindow = true;
+            p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
             int i = 0;
             while (i < DestFileList.Count)
@@ -155,25 +161,59 @@ namespace AudioSpliter
             string param_2 = SourceAudioFile;
             string param_3 = destFileName + ".mp3";
 
-            //Process p = new Process();
-            //p.StartInfo.FileName = "ffmpeg.exe";
             p.StartInfo.Arguments = string.Format(fmtStr, param_0, param_1, param_2, param_3);
-            //p.StartInfo.UseShellExecute = false;
 
             p.Start();
             p.WaitForExit();
         }
 
-        private void BtnSource_click(object sender, RoutedEventArgs e)
+        private async void SplitAudioAsync()
         {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "*.mp3|*.*";
-            ofd.Multiselect = false;
-            if (ofd.ShowDialog() == true)
+            Pbar.Maximum = DestFileList.Count;
+            Pbar.Value = 0;
+
+            Process p = new Process();
+
+            p.StartInfo.FileName = "ffmpeg.exe";
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.RedirectStandardInput = true;
+            p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.RedirectStandardError = true;
+            p.StartInfo.CreateNoWindow = true;
+            p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+
+            int i = 0;
+            while (i < DestFileList.Count)
             {
-                TxtSourceFile.Text = ofd.FileName;
-                SourceAudioFile = ofd.FileName;
+                string start = TimeList[2 * i];
+                string end = TimeList[2 * i + 1];
+                await SplitAudioUnitAsync(p, start, end, DestFileList[i]);
+                i++;
+                Pbar.Dispatcher.Invoke(() => {
+                    Pbar.Value = i;
+                });
             }
+
+            p.Close();
+            p.Dispose();
+
+            MessageBox.Show("Complete !");
         }
+
+
+        private async Task SplitAudioUnitAsync(Process p, string start, string end, string destFileName)
+        {
+            string fmtStr = "-ss {0} -t {1} -i {2} {3}";
+            string param_0 = start; ;
+            string param_1 = (float.Parse(end) - float.Parse(start)).ToString();
+            string param_2 = SourceAudioFile;
+            string param_3 = Path.Combine(DestFolder, destFileName + ".mp3" );
+
+            p.StartInfo.Arguments = string.Format(fmtStr, param_0, param_1, param_2, param_3);
+
+            p.Start();
+            await p.WaitForExitAsync();
+        }
+
     }
 }

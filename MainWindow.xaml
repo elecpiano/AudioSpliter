@@ -5,14 +5,24 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AudioSpliter"
         mc:Ignorable="d"
-        Title="MainWindow" Height="800" Width="800">
+        WindowStartupLocation="CenterScreen"
+        Title="AudioSpliter" Height="600" Width="800"
+        >
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <TextBlock x:Name="TxtSourceFile" Margin="4" Text=""/>
-        <TextBox x:Name="TxtDestFileList" Margin="4,24,4,4" AcceptsReturn="True"/>
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="32"/>
+                <RowDefinition Height="32"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" x:Name="TxtSourceFile" Margin="4" Text=""/>
+            <ProgressBar Grid.Row="1" x:Name="Pbar" Margin="4"/>
+            <TextBox Grid.Row="2" x:Name="TxtDestFileList" Margin="4" AcceptsReturn="True" VerticalScrollBarVisibility="Visible"/>
+        </Grid>
         <StackPanel Grid.Column="1">
             <Button Width="120" Height="40" Margin="4" Content="Source" Click="BtnSource_click" />
             <Button Width="120" Height="40" Margin="4" Content="Split" Click="BtnGo_click" />
