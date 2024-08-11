@@ -65,7 +65,7 @@ namespace AudioSpliter
             Process p = new Process();
 
             p.StartInfo.FileName = "ffmpeg.exe";
-            p.StartInfo.Arguments = "-i 1.mp3 -af silencedetect=d=5.9 -f null -";
+            //p.StartInfo.Arguments = "-i 1.mp3 -af silencedetect=d=5.9 -f null -";
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.RedirectStandardInput = true;
             p.StartInfo.RedirectStandardOutput = true;
@@ -74,6 +74,11 @@ namespace AudioSpliter
             p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             p.ErrorDataReceived += new DataReceivedEventHandler(ProcessDataReceived);
             p.StartInfo.StandardErrorEncoding = Encoding.UTF8;
+
+
+            string fmtStr = "-i {0} -af silencedetect=d=5.5 -f null -";
+            string param_0 = SourceAudioFile;
+            p.StartInfo.Arguments = string.Format(fmtStr, param_0);
 
             p.Start();
             p.BeginErrorReadLine();
