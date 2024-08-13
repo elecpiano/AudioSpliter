@@ -1,22 +1,11 @@
 ﻿using Microsoft.Win32;
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 
 namespace AudioSpliter
 {
@@ -25,6 +14,7 @@ namespace AudioSpliter
     /// </summary>
     public partial class MainWindow : Window
     {
+        string SPLIT_INTERVAL = "1.9"; // in seconds
         string SourceAudioFile = "";
         string DestFolder = "";
         List<string> TimeList = new List<string>();
@@ -54,6 +44,9 @@ namespace AudioSpliter
                 MessageBox.Show("Select an audio file");
                 return;
             }
+
+            BtnSource.IsEnabled = false;
+            BtnGo.IsEnabled = false;
             LoadAudioSource();
         }
 
@@ -76,9 +69,10 @@ namespace AudioSpliter
             p.StartInfo.StandardErrorEncoding = Encoding.UTF8;
 
 
-            string fmtStr = "-i {0} -af silencedetect=d=5.5 -f null -";
+            string fmtStr = "-i {0} -af silencedetect=d={1} -f null -";
             string param_0 = SourceAudioFile;
-            p.StartInfo.Arguments = string.Format(fmtStr, param_0);
+            string param_1 = SPLIT_INTERVAL;
+            p.StartInfo.Arguments = string.Format(fmtStr, param_0, param_1);
 
             p.Start();
             p.BeginErrorReadLine();
@@ -220,5 +214,10 @@ namespace AudioSpliter
             await p.WaitForExitAsync();
         }
 
+        private void TxtDestFileList_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            string[] strArr = TxtDestFileList.Text.Split(System.Environment.NewLine);
+            TxtDestLineCount.Text = strArr.Length.ToString();
+        }
     }
 }

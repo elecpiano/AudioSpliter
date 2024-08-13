@@ -21,11 +21,16 @@
             </Grid.RowDefinitions>
             <TextBlock Grid.Row="0" x:Name="TxtSourceFile" Margin="4" Text=""/>
             <ProgressBar Grid.Row="1" x:Name="Pbar" Margin="4"/>
-            <TextBox Grid.Row="2" x:Name="TxtDestFileList" Margin="4" AcceptsReturn="True" VerticalScrollBarVisibility="Visible"/>
+            <TextBox Grid.Row="2" x:Name="TxtDestFileList" Margin="4" AcceptsReturn="True" VerticalScrollBarVisibility="Visible"
+                     TextChanged="TxtDestFileList_TextChanged"/>
         </Grid>
         <StackPanel Grid.Column="1">
-            <Button Width="120" Height="40" Margin="4" Content="Source" Click="BtnSource_click" />
-            <Button Width="120" Height="40" Margin="4" Content="Split" Click="BtnGo_click" />
+            <Button x:Name="BtnSource" Width="120" Height="40" Margin="4" Content="Source" Click="BtnSource_click" />
+            <Button x:Name="BtnGo" Width="120" Height="40" Margin="4" Content="Split" Click="BtnGo_click" />
+            <StackPanel Orientation="Horizontal">
+                <TextBlock x:Name="TxtDestLineCount" Margin="4" Text="0"/>
+                <TextBlock Margin="4" Text=" Lines"/>
+            </StackPanel>
         </StackPanel>
     </Grid>
 </Window>
