@@ -196,7 +196,7 @@ namespace AudioSpliter
             p.Close();
             p.Dispose();
 
-            MessageBox.Show("Complete !");
+            MessageBox.Show("剪辑完成 !");
         }
 
 
